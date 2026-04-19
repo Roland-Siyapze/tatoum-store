@@ -6,10 +6,10 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "MyStore — Shop Online",
+  title: "Tatoum'Store — Shop Online",
   description: "Quality products delivered to your door",
   openGraph: {
-    title: "MyStore",
+    title: "Tatoum'Store",
     description: "Quality products delivered to your door",
     type: "website",
   },
