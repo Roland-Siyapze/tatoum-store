@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, Tag, LogOut } from "lucide-react";
-import { signOut } from "@/src/actions/auth";
+import { LayoutDashboard, Package, Tag } from "lucide-react";
+import type { ReactNode } from "react";
 
 const navItems = [
   { href: "/admin",            label: "Dashboard",  Icon: LayoutDashboard },
@@ -11,7 +11,11 @@ const navItems = [
   { href: "/admin/categories", label: "Categories", Icon: Tag },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  signOutSlot: ReactNode;
+}
+
+export function AdminSidebar({ signOutSlot }: AdminSidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -66,18 +70,9 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      {/* Sign out */}
+      {/* Sign out — rendered from server layout as a slot */}
       <div className="p-4" style={{ borderTop: "1px solid rgba(255,192,211,0.15)" }}>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:text-rose-300 hover:bg-rose-500/10"
-            style={{ color: "rgba(255,239,244,0.5)" }}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </button>
-        </form>
+        {signOutSlot}
       </div>
     </aside>
   );
