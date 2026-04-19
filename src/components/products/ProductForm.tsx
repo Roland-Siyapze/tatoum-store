@@ -7,15 +7,16 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { createClient } from "@/src/lib/supabase/client";
-import { Product } from "@/src/types";
+import { Product, Category } from "@/src/types";
 import { toast } from "sonner";
 
 interface ProductFormProps {
   product?: Product;
+  categories: Category[];          // ← passed from server page
   onSubmit: (formData: FormData) => Promise<void>;
 }
 
-export function ProductForm({ product, onSubmit }: ProductFormProps) {
+export function ProductForm({ product, categories, onSubmit }: ProductFormProps) {
   const router = useRouter();
   const [imageUrl, setImageUrl] = useState(product?.image_url ?? "");
   const [uploading, setUploading] = useState(false);
@@ -24,10 +25,10 @@ export function ProductForm({ product, onSubmit }: ProductFormProps) {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
+
     const supabase = createClient();
-    const ext = file.name.split(".").pop();
+    const ext  = file.name.split(".").pop();
     const path = `${Date.now()}.${ext}`;
 
     const { error } = await supabase.storage
@@ -40,10 +41,7 @@ export function ProductForm({ product, onSubmit }: ProductFormProps) {
       return;
     }
 
-    const { data } = supabase.storage
-      .from("product-images")
-      .getPublicUrl(path);
-
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
     setImageUrl(data.publicUrl);
     toast.success("Image uploaded!");
     setUploading(false);
@@ -67,11 +65,14 @@ export function ProductForm({ product, onSubmit }: ProductFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
+
+      {/* Name */}
       <div className="space-y-2">
         <Label htmlFor="name">Name *</Label>
         <Input id="name" name="name" defaultValue={product?.name} required />
       </div>
 
+      {/* Description */}
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
         <textarea
@@ -83,30 +84,46 @@ export function ProductForm({ product, onSubmit }: ProductFormProps) {
         />
       </div>
 
+      {/* Price + Stock */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="price">Price (XAF) *</Label>
           <Input
-            id="price"
-            name="price"
-            type="number"
-            step="1"
-            defaultValue={product?.price}
-            required
+            id="price" name="price" type="number" step="1"
+            defaultValue={product?.price} required
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="stock">Stock *</Label>
           <Input
-            id="stock"
-            name="stock"
-            type="number"
-            defaultValue={product?.stock ?? 0}
-            required
+            id="stock" name="stock" type="number"
+            defaultValue={product?.stock ?? 0} required
           />
         </div>
       </div>
 
+      {/* Category ← NEW */}
+      <div className="space-y-2">
+        <Label htmlFor="category_id">Category</Label>
+        <select
+          id="category_id"
+          name="category_id"
+          defaultValue={product?.category_id ?? ""}
+          className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">— No category —</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}{!cat.is_published ? " 🚫 (hidden)" : ""}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-400">
+          Products in a hidden category won&apos;t appear in the store.
+        </p>
+      </div>
+
+      {/* Status (edit only) */}
       {product && (
         <div className="space-y-2">
           <Label htmlFor="is_active">Status</Label>
@@ -114,7 +131,7 @@ export function ProductForm({ product, onSubmit }: ProductFormProps) {
             id="is_active"
             name="is_active"
             defaultValue={product.is_active ? "true" : "false"}
-            className="w-full border rounded-md p-2 text-sm"
+            className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="true">Active</option>
             <option value="false">Hidden</option>
@@ -122,31 +139,24 @@ export function ProductForm({ product, onSubmit }: ProductFormProps) {
         </div>
       )}
 
+      {/* Image upload */}
       <div className="space-y-2">
         <Label>Product Image</Label>
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          disabled={uploading}
-        />
-        {uploading && <p className="text-sm text-gray-500">Uploading...</p>}
+        <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+        {uploading && <p className="text-sm text-gray-400">Uploading…</p>}
         {imageUrl && (
-          <div className="relative w-40 h-40 rounded-lg overflow-hidden border">
+          <div className="relative w-40 h-40 rounded-xl overflow-hidden border border-pink-100">
             <Image src={imageUrl} alt="Preview" fill className="object-cover" />
           </div>
         )}
       </div>
 
-      <div className="flex gap-3">
+      {/* Actions */}
+      <div className="flex gap-3 pt-2">
         <Button type="submit" disabled={loading || uploading}>
-          {loading ? "Saving..." : product ? "Update Product" : "Create Product"}
+          {loading ? "Saving…" : product ? "Update Product" : "Create Product"}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-        >
+        <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>
       </div>
